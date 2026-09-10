@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ARCHIVE — a personal inventory. An index of things I've owned. 物品留下，故事继续。"
+    />
+    <title>ARCHIVE — A Personal Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f2f1eb'/%3E%3Ctext x='8' y='46' font-family='Georgia,serif' font-size='42' font-weight='700' fill='%23000'%3Ea.%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div class="site">
+      <div class="frame">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark">a.</span>
+            <span class="brand-text">A Personal Inventory</span>
+            <span class="brand-arrow" aria-hidden="true">↗</span>
+          </div>
+          <div class="top-actions">
+            <button class="top-link hide-sm" type="button" data-open="info">
+              Information
+            </button>
+            <span class="top-divider" aria-hidden="true"></span>
+            <button class="add-btn" type="button" data-open="add">
+              Add Object
+              <span class="plus" aria-hidden="true">+</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="hero" aria-label="Archive introduction">
+          <div class="hero-meta">
+            <span>Clothing, Footwear &amp; Other Things.</span>
+            <span>Vol. 001 — Ongoing</span>
+          </div>
+          <h1 class="hero-title">Archive</h1>
+          <div class="hero-foot">
+            <div class="hero-copy">
+              <p>An index of things I've owned.</p>
+              <p class="zh">物品留下，故事继续。</p>
+            </div>
+            <div class="hero-switch" role="tablist" aria-label="Archive source">
+              <button type="button" data-source="mine" id="tab-mine">
+                Your Archive <span id="mine-count">000</span>
+              </button>
+              <button type="button" class="is-active" data-source="sample" id="tab-sample">
+                <span class="dot" aria-hidden="true"></span>
+                Example Index <span id="sample-count">016</span>
+              </button>
+            </div>
+            <div class="hero-count">
+              <span class="label" id="count-label">Sample Objects</span>
+              <span class="num" id="hero-num">016</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="toolbar">
+          <nav class="filters" aria-label="Category filters">
+            <button class="filter-btn is-active" type="button" data-filter="ALL">
+              All <span class="count" data-count="ALL">16</span>
+            </button>
+            <button class="filter-btn" type="button" data-filter="CLOTHING">
+              Clothing <span class="count" data-count="CLOTHING">9</span>
+            </button>
+            <button class="filter-btn" type="button" data-filter="FOOTWEAR">
+              Footwear <span class="count" data-count="FOOTWEAR">4</span>
+            </button>
+            <button class="filter-btn" type="button" data-filter="OBJECTS">
+              Objects <span class="count" data-count="OBJECTS">3</span>
+            </button>
+          </nav>
+          <div class="tools">
+            <button class="tool-btn" type="button" id="search-toggle" aria-label="Search" title="Search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.5-3.5" />
+              </svg>
+            </button>
+            <span class="tool-divider" aria-hidden="true"></span>
+            <button class="tool-btn is-active" type="button" data-view="grid" aria-label="Grid view" title="Grid">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="3" y="3" width="8" height="8" />
+                <rect x="13" y="3" width="8" height="8" />
+                <rect x="3" y="13" width="8" height="8" />
+                <rect x="13" y="13" width="8" height="8" />
+              </svg>
+            </button>
+            <button class="tool-btn" type="button" data-view="list" aria-label="List view" title="List">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="3" y="5" width="18" height="2" />
+                <rect x="3" y="11" width="18" height="2" />
+                <rect x="3" y="17" width="18" height="2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="search-panel" id="search-panel">
+          <label class="sr-only" for="search-input">Search objects</label>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search name, colour, notes…"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="collection-note">
+          <span id="collection-note-text">◦ Example Collection — Not Your Purchase Records</span>
+          <span id="index-label">Index : 1</span>
+        </div>
+
+        <main class="grid-wrap">
+          <div class="archive-grid" id="archive-grid" aria-live="polite"></div>
+        </main>
+
+        <footer class="site-footer">
+          <div class="footer-main">
+            <p class="footer-slogan">Personal.<br />Not For Sale.</p>
+            <div class="footer-note">
+              <p>An Ongoing Collection.</p>
+              <p class="zh">不是商店。只是自己曾经选择过的东西。</p>
+            </div>
+            <div class="footer-io">
+              <div class="io-row">
+                <button class="io-btn" type="button" id="export-btn">Export</button>
+                <button class="io-btn" type="button" id="import-btn">Import</button>
+                <input id="import-file" type="file" accept="application/json,.json" hidden />
+              </div>
+              <span class="io-hint">Local Only / Back Up Regularly</span>
+            </div>
+          </div>
+          <div class="footer-bar">
+            <span>Archive © 2026</span>
+            <span>Made of Things, Not Numbers.</span>
+            <span>Edition 01</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Specimen modal -->
+    <div class="overlay" id="specimen-overlay" role="dialog" aria-modal="true" aria-labelledby="specimen-title">
+      <div class="modal">
+        <div class="modal-bar">
+          <span id="specimen-id">Specimen / A-001</span>
+          <div class="modal-nav">
+            <button type="button" id="prev-btn" aria-label="Previous">←</button>
+            <button type="button" id="next-btn" aria-label="Next">→</button>
+            <button type="button" data-close="specimen">Close ×</button>
+          </div>
+        </div>
+        <div class="specimen-body">
+          <div class="specimen-media">
+            <div class="panel-label" id="specimen-media-label">Clothing / Object View</div>
+            <div class="specimen-figure">
+              <img id="specimen-image" src="" alt="" />
+            </div>
+            <div class="specimen-caption">Concept Image / Demonstration Only</div>
+          </div>
+          <div class="specimen-data">
+            <div class="panel-label" id="specimen-data-label">Clothing / Example Record</div>
+            <h2 class="specimen-title" id="specimen-title">Structured Blazer</h2>
+            <p class="specimen-sub" id="specimen-sub">Illustrative object / 非经核实的商品资料</p>
+            <dl class="spec-table">
+              <div class="spec-row">
+                <dt>Acquired / 购入</dt>
+                <dd id="spec-acquired">—</dd>
+              </div>
+              <div class="spec-row">
+                <dt>Colour / 颜色</dt>
+                <dd id="spec-colour">—</dd>
+              </div>
+              <div class="spec-row">
+                <dt>Size / 尺寸</dt>
+                <dd id="spec-size">—</dd>
+              </div>
+              <div class="spec-row">
+                <dt>Status / 状态</dt>
+                <dd id="spec-status">—</dd>
+              </div>
+            </dl>
+            <div class="field-notes">
+              <h4>Field Notes / 物品记忆</h4>
+              <p id="specimen-notes"></p>
+            </div>
+            <div class="specimen-cta">
+              <button class="cta" type="button" id="start-own" hidden>
+                Start Your Own Archive ↗
+              </button>
+              <button class="cta danger" type="button" id="delete-item" hidden>
+                Remove Object
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Information -->
+    <div class="overlay" id="info-overlay" role="dialog" aria-modal="true" aria-labelledby="info-title">
+      <div class="modal modal-sm">
+        <div class="modal-bar">
+          <span>Information</span>
+          <button type="button" data-close="info">Close ×</button>
+        </div>
+        <div class="info-body">
+          <h2 id="info-title">What This Is</h2>
+          <p>
+            ARCHIVE 是一个本地优先的个人物品索引。它不是商店，也不追踪真实购买记录——只是把你曾经选择过的东西，安静地放在一页里。
+          </p>
+          <p>
+            示例藏品仅供演示版式。点击 <strong>Add Object</strong> 或
+            <strong>Start Your Own Archive</strong>，数据会保存在本机浏览器
+            localStorage，可随时 Export / Import。
+          </p>
+          <ul class="info-list">
+            <li>
+              <strong>Privacy</strong>
+              <span>数据不出你的浏览器，除非你主动导出 JSON。</span>
+            </li>
+            <li>
+              <strong>Backup</strong>
+              <span>更换设备前请 Export。清理站点数据会丢失本地档案。</span>
+            </li>
+            <li>
+              <strong>Deploy</strong>
+              <span>纯静态站点，可直接挂到 GitHub Pages。</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add / Edit -->
+    <div class="overlay" id="add-overlay" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="modal modal-sm">
+        <div class="modal-bar">
+          <span>New Object</span>
+          <button type="button" data-close="add">Close ×</button>
+        </div>
+        <form class="form-body" id="add-form">
+          <h2 id="add-title">Add Object</h2>
+          <p>写入你自己的档案。图片可填公开 URL，留空则使用占位图。</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="f-name">Name / 名称</label>
+              <input id="f-name" name="name" required maxlength="80" placeholder="STRUCTURED BLAZER" />
+            </div>
+            <div class="field">
+              <label for="f-category">Category / 分类</label>
+              <select id="f-category" name="category" required>
+                <option value="CLOTHING">Clothing</option>
+                <option value="FOOTWEAR">Footwear</option>
+                <option value="OBJECTS">Objects</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-colour">Colour / 颜色</label>
+              <input id="f-colour" name="colour" maxlength="40" placeholder="Charcoal" />
+            </div>
+            <div class="field">
+              <label for="f-year">Year / 年份</label>
+              <input id="f-year" name="year" maxlength="4" placeholder="2024" />
+            </div>
+            <div class="field">
+              <label for="f-acquired">Acquired / 购入</label>
+              <input id="f-acquired" name="acquired" type="date" />
+            </div>
+            <div class="field">
+              <label for="f-size">Size / 尺寸</label>
+              <input id="f-size" name="size" maxlength="40" placeholder="M / 待补充" />
+            </div>
+            <div class="field">
+              <label for="f-status">Status / 状态</label>
+              <input id="f-status" name="status" maxlength="60" value="In collection / 仍持有" />
+            </div>
+            <div class="field">
+              <label for="f-image">Image URL</label>
+              <input id="f-image" name="image" type="url" placeholder="https://…" />
+            </div>
+            <div class="field">
+              <label for="f-notes">Field Notes / 物品记忆</label>
+              <textarea id="f-notes" name="notes" maxlength="600" placeholder="这段物件和你之间的故事…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="cta ghost" type="button" data-close="add">Cancel</button>
+            <button class="cta" type="submit">Save To Archive ↗</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
