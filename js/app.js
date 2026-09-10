@@ -11,24 +11,28 @@
       </svg>`
     );
 
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const EXIT_MS = reduceMotion ? 0 : 240;
+  const ENTER_STAGGER = reduceMotion ? 0 : 45;
+  const OVERLAY_MS = reduceMotion ? 0 : 380;
+
   const state = {
-    source: "sample", // sample | mine
+    source: "sample",
     filter: "ALL",
     view: "grid",
     query: "",
     sample: Array.isArray(window.ARCHIVE_SAMPLE) ? window.ARCHIVE_SAMPLE : [],
     mine: loadMine(),
     activeId: null,
+    rendering: false,
+    swapping: false,
+    closing: false,
   };
 
   const els = {
     grid: document.getElementById("archive-grid"),
     heroNum: document.getElementById("hero-num"),
     countLabel: document.getElementById("count-label"),
-    mineCount: document.getElementById("mine-count"),
-    sampleCount: document.getElementById("sample-count"),
-    collectionNote: document.getElementById("collection-note-text"),
-    indexLabel: document.getElementById("index-label"),
     searchPanel: document.getElementById("search-panel"),
     searchInput: document.getElementById("search-input"),
     toast: document.getElementById("toast"),
@@ -38,6 +42,7 @@
     form: document.getElementById("add-form"),
     startOwn: document.getElementById("start-own"),
     deleteItem: document.getElementById("delete-item"),
+    specimenSwap: document.getElementById("specimen-swap"),
   };
 
   function loadMine() {
@@ -57,6 +62,10 @@
 
   function pad3(n) {
     return String(n).padStart(3, "0");
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function currentList() {
@@ -95,28 +104,52 @@
 
   function showToast(msg) {
     els.toast.textContent = msg;
+    els.toast.classList.remove("is-show");
+    void els.toast.offsetWidth;
     els.toast.classList.add("is-show");
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => els.toast.classList.remove("is-show"), 2200);
   }
 
-  function openOverlay(name) {
+  async function openOverlay(name) {
     const map = { specimen: els.specimen, info: els.info, add: els.add };
-    Object.values(map).forEach((el) => el.classList.remove("is-open"));
-    map[name].classList.add("is-open");
+    const target = map[name];
+    for (const el of Object.values(map)) {
+      if (el !== target && el.classList.contains("is-open")) {
+        await closeOverlayEl(el);
+      }
+    }
+    target.classList.remove("is-closing");
+    void target.offsetWidth;
+    target.classList.add("is-open");
     document.body.classList.add("is-locked");
   }
 
-  function closeOverlays() {
-    [els.specimen, els.info, els.add].forEach((el) => el.classList.remove("is-open"));
-    document.body.classList.remove("is-locked");
-    state.activeId = null;
+  async function closeOverlayEl(el) {
+    if (!el.classList.contains("is-open") && !el.classList.contains("is-closing")) {
+      return;
+    }
+    el.classList.add("is-closing");
+    el.classList.remove("is-open");
+    await wait(OVERLAY_MS);
+    el.classList.remove("is-closing");
   }
 
-  function featureCard() {
+  async function closeOverlays() {
+    if (state.closing) return;
+    state.closing = true;
+    await Promise.all(
+      [els.specimen, els.info, els.add].map((el) => closeOverlayEl(el))
+    );
+    document.body.classList.remove("is-locked");
+    state.activeId = null;
+    state.closing = false;
+  }
+
+  function featureCard(i) {
     const total = pad3(currentList().length || 0);
     return `
-      <article class="card feature-card" aria-hidden="false">
+      <article class="card feature-card" style="--i:${i}" aria-hidden="false">
         <div class="feature-top">
           <span>Index / 001 &nbsp; A Specimen Collection</span>
           <span class="feature-arrow" aria-hidden="true">↘</span>
@@ -130,10 +163,10 @@
     `;
   }
 
-  function itemCard(item) {
+  function itemCard(item, i) {
     const img = item.image || PLACEHOLDER;
     return `
-      <button class="card" type="button" data-open-id="${item.id}">
+      <button class="card" type="button" data-open-id="${item.id}" style="--i:${i}">
         <div class="card-head">
           <span>${item.index} / ${item.category}</span>
           <span aria-hidden="true">↗</span>
@@ -161,7 +194,32 @@
     return escapeHtml(str).replace(/'/g, "&#39;");
   }
 
-  function render() {
+  function animateHeroNum(next) {
+    const text = pad3(next);
+    if (els.heroNum.textContent === text) return;
+    els.heroNum.classList.remove("is-tick");
+    void els.heroNum.offsetWidth;
+    els.heroNum.textContent = text;
+    els.heroNum.classList.add("is-tick");
+  }
+
+  async function exitCards() {
+    const cards = [...els.grid.querySelectorAll(".card, .empty-state")];
+    if (!cards.length) return;
+    els.grid.classList.add("is-morphing");
+    cards.forEach((card, i) => {
+      card.style.setProperty("--i", String(Math.min(i, 8)));
+      card.classList.add("is-out");
+      card.classList.remove("is-in");
+    });
+    await wait(EXIT_MS + Math.min(cards.length, 8) * 18);
+  }
+
+  function enterCards() {
+    els.grid.classList.remove("is-morphing");
+  }
+
+  function paintGrid(animate = true) {
     const list = currentList();
     const shown = filteredList();
     const c = counts(list);
@@ -170,21 +228,15 @@
       el.textContent = c[el.dataset.count] ?? 0;
     });
 
-    els.mineCount.textContent = pad3(state.mine.length);
-    els.sampleCount.textContent = pad3(state.sample.length);
-    els.heroNum.textContent = pad3(list.length);
+    els.mineCount && (els.mineCount.textContent = pad3(state.mine.length));
+    els.sampleCount && (els.sampleCount.textContent = pad3(state.sample.length));
+    animateHeroNum(list.length);
     els.countLabel.textContent =
       state.source === "mine" ? "Your Objects" : "Sample Objects";
 
     document.querySelectorAll("[data-source]").forEach((btn) => {
       btn.classList.toggle("is-active", btn.dataset.source === state.source);
     });
-
-    els.collectionNote.textContent =
-      state.source === "mine"
-        ? "◦ Your Collection — Stored Locally In This Browser"
-        : "◦ Example Collection — Not Your Purchase Records";
-    els.indexLabel.textContent = `Index : ${shown.length}`;
 
     els.grid.classList.toggle("is-list", state.view === "list");
 
@@ -200,27 +252,54 @@
           }</p>
         </div>
       `;
+      els.grid.classList.remove("is-morphing");
       return;
     }
 
-    const cards = shown.map(itemCard).join("");
-    const lead =
-      state.source === "sample" && state.filter === "ALL" && !state.query
-        ? featureCard()
-        : "";
+    const leadNeeded =
+      state.source === "sample" && state.filter === "ALL" && !state.query;
+    let i = 0;
+    const lead = leadNeeded ? featureCard(i++) : "";
+    const cards = shown.map((item) => itemCard(item, i++)).join("");
     els.grid.innerHTML = lead + cards;
+    if (!animate) {
+      els.grid.querySelectorAll(".card").forEach((card) => {
+        card.style.animation = "none";
+        card.style.opacity = "1";
+        card.style.transform = "none";
+      });
+    }
+    enterCards();
+  }
+
+  async function render({ animate = true } = {}) {
+    if (state.rendering) {
+      state._pendingRender = { animate };
+      return;
+    }
+    state.rendering = true;
+    try {
+      if (animate && els.grid.children.length) {
+        await exitCards();
+      }
+      paintGrid(animate);
+      // allow enter stagger to start
+      await wait(ENTER_STAGGER);
+    } finally {
+      state.rendering = false;
+      if (state._pendingRender) {
+        const next = state._pendingRender;
+        state._pendingRender = null;
+        render(next);
+      }
+    }
   }
 
   function findActiveIndex() {
     return filteredList().findIndex((i) => i.id === state.activeId);
   }
 
-  function openSpecimen(id) {
-    const list = filteredList();
-    const item = list.find((i) => i.id === id) || currentList().find((i) => i.id === id);
-    if (!item) return;
-    state.activeId = item.id;
-
+  function fillSpecimen(item) {
     document.getElementById("specimen-id").textContent = `Specimen / ${item.id}`;
     document.getElementById("specimen-media-label").textContent =
       `${item.category} / Object View`;
@@ -247,17 +326,51 @@
 
     els.startOwn.hidden = state.source !== "sample";
     els.deleteItem.hidden = state.source !== "mine";
-
-    openOverlay("specimen");
   }
 
-  function stepSpecimen(delta) {
+  async function openSpecimen(id, { direction = null } = {}) {
+    const list = filteredList();
+    const item =
+      list.find((i) => i.id === id) || currentList().find((i) => i.id === id);
+    if (!item) return;
+    state.activeId = item.id;
+
+    const swap = els.specimenSwap;
+    const alreadyOpen = els.specimen.classList.contains("is-open");
+
+    if (alreadyOpen && direction && !reduceMotion) {
+      if (state.swapping) return;
+      state.swapping = true;
+      const leave = direction > 0 ? "is-leave-next" : "is-leave-prev";
+      const enter = direction > 0 ? "is-enter-next" : "is-enter-prev";
+      swap.classList.remove(
+        "is-leave-next",
+        "is-leave-prev",
+        "is-enter-next",
+        "is-enter-prev"
+      );
+      swap.classList.add(leave);
+      await wait(EXIT_MS);
+      fillSpecimen(item);
+      swap.classList.remove(leave);
+      swap.classList.add(enter);
+      await wait(OVERLAY_MS);
+      swap.classList.remove(enter);
+      state.swapping = false;
+      return;
+    }
+
+    fillSpecimen(item);
+    await openOverlay("specimen");
+  }
+
+  async function stepSpecimen(delta) {
     const list = filteredList();
     if (!list.length) return;
     let idx = findActiveIndex();
     if (idx < 0) idx = 0;
     idx = (idx + delta + list.length) % list.length;
-    openSpecimen(list[idx].id);
+    await openSpecimen(list[idx].id, { direction: delta });
   }
 
   function createItem(data) {
@@ -303,7 +416,7 @@
 
   function importMine(file) {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result);
         const items = Array.isArray(data) ? data : data.items;
@@ -325,7 +438,7 @@
         }));
         saveMine();
         state.source = "mine";
-        render();
+        await render();
         showToast(`Imported ${state.mine.length} objects`);
       } catch {
         showToast("Import failed");
@@ -340,7 +453,7 @@
   });
 
   document.querySelectorAll("[data-close]").forEach((btn) => {
-    btn.addEventListener("click", closeOverlays);
+    btn.addEventListener("click", () => closeOverlays());
   });
 
   [els.specimen, els.info, els.add].forEach((overlay) => {
@@ -357,46 +470,52 @@
   });
 
   document.querySelectorAll("[data-source]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      if (state.source === btn.dataset.source) return;
       state.source = btn.dataset.source;
       state.filter = "ALL";
       document.querySelectorAll(".filter-btn").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.filter === "ALL");
       });
-      render();
+      await render();
     });
   });
 
   document.querySelectorAll(".filter-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      if (state.filter === btn.dataset.filter) return;
       state.filter = btn.dataset.filter;
       document.querySelectorAll(".filter-btn").forEach((b) => {
         b.classList.toggle("is-active", b === btn);
       });
-      render();
+      await render();
     });
   });
 
   document.querySelectorAll("[data-view]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      if (state.view === btn.dataset.view) return;
       state.view = btn.dataset.view;
       document.querySelectorAll("[data-view]").forEach((b) => {
         b.classList.toggle("is-active", b === btn);
       });
-      render();
+      await render();
     });
   });
 
   document.getElementById("search-toggle").addEventListener("click", () => {
-    els.searchPanel.classList.toggle("is-open");
-    if (els.searchPanel.classList.contains("is-open")) {
-      els.searchInput.focus();
+    const opening = !els.searchPanel.classList.contains("is-open");
+    els.searchPanel.classList.toggle("is-open", opening);
+    if (opening) {
+      setTimeout(() => els.searchInput.focus(), reduceMotion ? 0 : 280);
     }
   });
 
+  let searchTimer = null;
   els.searchInput.addEventListener("input", () => {
     state.query = els.searchInput.value;
-    render();
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => render(), reduceMotion ? 0 : 180);
   });
 
   els.grid.addEventListener("click", (e) => {
@@ -408,25 +527,25 @@
   document.getElementById("prev-btn").addEventListener("click", () => stepSpecimen(-1));
   document.getElementById("next-btn").addEventListener("click", () => stepSpecimen(1));
 
-  els.startOwn.addEventListener("click", () => {
-    closeOverlays();
+  els.startOwn.addEventListener("click", async () => {
+    await closeOverlays();
     state.source = "mine";
-    render();
-    openOverlay("add");
+    await render();
+    await openOverlay("add");
     showToast("Switched to your archive");
   });
 
-  els.deleteItem.addEventListener("click", () => {
+  els.deleteItem.addEventListener("click", async () => {
     if (!state.activeId) return;
     state.mine = state.mine.filter((i) => i.id !== state.activeId);
     reindexMine();
     saveMine();
-    closeOverlays();
-    render();
+    await closeOverlays();
+    await render();
     showToast("Object removed");
   });
 
-  els.form.addEventListener("submit", (e) => {
+  els.form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(els.form);
     const item = createItem({
@@ -445,9 +564,9 @@
     state.source = "mine";
     els.form.reset();
     document.getElementById("f-status").value = "In collection / 仍持有";
-    closeOverlays();
-    render();
-    openSpecimen(item.id);
+    await closeOverlays();
+    await render();
+    await openSpecimen(item.id);
     showToast("Saved locally");
   });
 
@@ -461,5 +580,9 @@
     e.target.value = "";
   });
 
-  render();
+  // Initial paint + page choreography
+  paintGrid(true);
+  requestAnimationFrame(() => {
+    document.body.classList.add("is-ready");
+  });
 })();

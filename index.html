@@ -23,8 +23,6 @@
         <header class="topbar">
           <div class="brand">
             <span class="brand-mark">a.</span>
-            <span class="brand-text">A Personal Inventory</span>
-            <span class="brand-arrow" aria-hidden="true">↗</span>
           </div>
           <div class="top-actions">
             <button class="top-link hide-sm" type="button" data-open="info">
@@ -39,28 +37,11 @@
         </header>
 
         <section class="hero" aria-label="Archive introduction">
-          <div class="hero-meta">
-            <span>Clothing, Footwear &amp; Other Things.</span>
-            <span>Vol. 001 — Ongoing</span>
-          </div>
           <h1 class="hero-title">Archive</h1>
           <div class="hero-foot">
-            <div class="hero-copy">
-              <p>An index of things I've owned.</p>
-              <p class="zh">物品留下，故事继续。</p>
-            </div>
-            <div class="hero-switch" role="tablist" aria-label="Archive source">
-              <button type="button" data-source="mine" id="tab-mine">
-                Your Archive <span id="mine-count">000</span>
-              </button>
-              <button type="button" class="is-active" data-source="sample" id="tab-sample">
-                <span class="dot" aria-hidden="true"></span>
-                Example Index <span id="sample-count">016</span>
-              </button>
-            </div>
             <div class="hero-count">
               <span class="label" id="count-label">Sample Objects</span>
-              <span class="num" id="hero-num">016</span>
+              <span class="num hero-num" id="hero-num">016</span>
             </div>
           </div>
         </section>
@@ -107,18 +88,15 @@
         </div>
 
         <div class="search-panel" id="search-panel">
-          <label class="sr-only" for="search-input">Search objects</label>
-          <input
-            id="search-input"
-            type="search"
-            placeholder="Search name, colour, notes…"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="collection-note">
-          <span id="collection-note-text">◦ Example Collection — Not Your Purchase Records</span>
-          <span id="index-label">Index : 1</span>
+          <div class="search-inner">
+            <label class="sr-only" for="search-input">Search objects</label>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Search name, colour, notes…"
+              autocomplete="off"
+            />
+          </div>
         </div>
 
         <main class="grid-wrap">
@@ -128,10 +106,6 @@
         <footer class="site-footer">
           <div class="footer-main">
             <p class="footer-slogan">Personal.<br />Not For Sale.</p>
-            <div class="footer-note">
-              <p>An Ongoing Collection.</p>
-              <p class="zh">不是商店。只是自己曾经选择过的东西。</p>
-            </div>
             <div class="footer-io">
               <div class="io-row">
                 <button class="io-btn" type="button" id="export-btn">Export</button>
@@ -161,7 +135,7 @@
             <button type="button" data-close="specimen">Close ×</button>
           </div>
         </div>
-        <div class="specimen-body">
+        <div class="specimen-body specimen-swap" id="specimen-swap">
           <div class="specimen-media">
             <div class="panel-label" id="specimen-media-label">Clothing / Object View</div>
             <div class="specimen-figure">
